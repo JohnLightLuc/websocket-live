@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Position tracking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="shortcut icon" href="https://www.vhv.rs/dpng/d/429-4295429_google-maps-pin-png-google-maps-marker-transparent.png" type="image/x-icon">
+
+    <style>
+        html {
+            font-family: sans-serif;
+            line-height: 1.15;
+            height: 100%;
+        }
+        
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #1a1a1a;
+            text-align: left;
+            height: 100%;
+            background-color: #fff;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .map {
+            flex: 1;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="container">
+        <div id="map" class="map"></div>
+        <div id="map1" class="map1"></div>
+    </main>
+
+    <input type="hidden" name="positionLat" id="positionLat" value="<%= latitude %>">
+    <input type="hidden" name="positionLon" id="positionLon" value="<%= longitude %>">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.js?v=1.0.0"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.API_KEY %>&callback=initMap"></script>
+
+
+    <script>
+        var marker;
+        var map;
+        var driverPosition;
+
+        function initMap() {
+
+            $(document).ready(function() {
+
+                const icon = "https://www.vhv.rs/dpng/d/429-4295429_google-maps-pin-png-google-maps-marker-transparent.png";
+                driverPosition = new google.maps.LatLng(document.getElementById('positionLat').value, document.getElementById('positionLon').value);
+
+                marker = new google.maps.Marker({
+                    position: driverPosition,
+                    map,
+                    icon: icon,
+                    title: "User",
+                });
+
+                map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 4,
+                    center: driverPosition
+                });
+                map.panTo(driverPosition);
+
+            });
+
+
+        }
+
+        // Function de mise à jour de la position
+        function updatePosition(latitude, longitude) {
+            const newLatLng = new google.maps.LatLng(latitude, longitude);
+            marker.setPosition(newLatLng);
+            map.panTo(newLatLng); // Déplacez la carte pour suivre le marqueur
+        };
+    </script>
+
+    <script src="/socket.io/socket.io.js?v=1.0.0"></script>
+    <script>
+        $(document).ready(function() {
+
+            var socket = io();
+
+            // Remplacez "param1" et "param2" par les paramètres personnalisés de votre choix
+            const roomName = "room_<%= routeName %>";
+            console.log(roomName);
+
+            // Rejoindre la salle avec le nom de la salle basé sur les paramètres
+            socket.emit('join_room', roomName);
+
+            socket.on('driver_position_update', (data) => {
+                console.log(`Position mise à jour du conducteur :`, data);
+                updatePosition(data.lat, data.lng);
+            });
+
+            // Écouter la réponse de l'événement personnalisé
+            socket.on('driver_stopped_sharing', () => {
+                // Traitez l'arrêt du partage du conducteur et affichez un message approprié sur la carte
+                console.log(`Le partage de position du conducteur a été arrêté.`);
+                window.location.replace('/stop-sharing');
+            });
+        });
+    </script>
+</body>
+
+</html>
