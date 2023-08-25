@@ -7,8 +7,8 @@ exports.index = function(req, res, next) {
 
 exports.position = async function(req, res, next) {
     const params = req.params.roomeName;
-    let latitude = 5.36252499948608;
-    let longitude = -4.0078527016481065;
+    let latitude = 5.355135316846879;
+    let longitude = -4.099451746586401;
 
     res.render('map', { routeName: params, latitude: latitude, longitude: longitude });
 };
